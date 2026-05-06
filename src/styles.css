@@ -1,0 +1,139 @@
+:root {
+  --cm-teal-700: #0f7f7a;
+  --cm-teal-500: #1fa8a2;
+  --cm-gold-500: #d4a938;
+  --cm-gray-100: #f3f5f7;
+  --cm-gray-200: #e8ecef;
+  --cm-gray-700: #3c4b58;
+  --cm-white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  background: linear-gradient(180deg, #f9fbfc 0%, var(--cm-gray-100) 100%);
+  color: var(--cm-gray-700);
+}
+
+.dashboard-shell {
+  max-width: 980px;
+  margin: 2rem auto;
+  padding: 0 1rem 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.card-surface {
+  border: 1px solid rgba(15, 127, 122, 0.1);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #f7fafb);
+  box-shadow: 0 8px 24px rgba(16, 38, 55, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.hero-card {
+  padding: 1.5rem;
+}
+
+.brand-tag {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--cm-teal-700);
+  font-weight: 600;
+}
+
+.hero-card h1 {
+  margin: 0.45rem 0 1rem;
+  color: var(--cm-teal-700);
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.metric-label {
+  margin: 0;
+  color: #57707b;
+  font-size: 0.82rem;
+}
+
+.metric-value {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--cm-gray-700);
+}
+
+.announcement-strip {
+  padding: 0.9rem 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  border-left: 6px solid var(--cm-gold-500);
+}
+
+.announcement-strip strong {
+  color: var(--cm-teal-700);
+}
+
+h2 {
+  margin: 0.3rem 0;
+  color: var(--cm-teal-700);
+}
+
+.actions-grid {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.action-card {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(16, 38, 55, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #f6fbfb, #edf5f5);
+  border: 1px solid rgba(31, 168, 162, 0.2);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.outline-icon {
+  width: 24px;
+  height: 24px;
+  stroke: var(--cm-teal-700);
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.action-text strong {
+  display: block;
+  color: var(--cm-teal-700);
+}
+
+.action-text small {
+  color: #667985;
+}
