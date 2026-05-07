@@ -1,85 +1,76 @@
-import express from 'express';
-import {
+const express = require("express");
+const dotenv = require("dotenv");
+const {
   createAnnouncement,
   listAnnouncements,
   listAnnouncementsForResident,
-  updateAnnouncement,
-} from './announcementsService.js';
+  updateAnnouncement
+} = require("./announcementsService");
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-function requireAdminOrSU(req, res, next) {
-  const role = req.header('x-role');
-  if (role !== 'admin' && role !== 'su') {
-    return res.status(403).json({ error: 'Forbidden. Admin/SU required.' });
+// Role check helper
+function requireAdmin(req, res, next) {
+  const role = req.headers["x-role"];
+  if (role !== "ADMIN" && role !== "SU") {
+    return res.status(403).json({ error: "Admin or SU role required" });
   }
-  return next();
+  next();
 }
 
-app.post('/announcements', requireAdminOrSU, (req, res) => {
-  const { title, content, start_at, end_at, target_scope, phase, block } = req.body;
-
-  if (!title || !content) {
-    return res.status(400).json({ error: 'title and content are required.' });
+// ─────────────────────────────────────────────
+// POST /announcements  (Admin/SU only)
+// ─────────────────────────────────────────────
+app.post("/announcements", requireAdmin, (req, res) => {
+  try {
+    const announcement = createAnnouncement(req.body);
+    return res.status(201).json(announcement);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
-
-  if (target_scope === 'phase' && !phase) {
-    return res.status(400).json({ error: 'phase is required for target_scope=phase.' });
-  }
-
-  if (target_scope === 'block' && !block) {
-    return res.status(400).json({ error: 'block is required for target_scope=block.' });
-  }
-
-  const announcement = createAnnouncement({
-    ...req.body,
-    start_at: start_at ?? null,
-    end_at: end_at ?? null,
-  });
-
-  return res.status(201).json(announcement);
 });
 
-app.get('/announcements', (req, res) => {
-  const {
-    category,
-    phase,
-    block,
-    active_only,
-    audience,
-  } = req.query;
+// ─────────────────────────────────────────────
+// GET /announcements  (Admin/SU sees all)
+// ─────────────────────────────────────────────
+app.get("/announcements", (req, res) => {
+  const role = req.headers["x-role"];
 
-  const filters = {
-    category,
-    phase,
-    block,
-    active_only: active_only === 'true',
-  };
-
-  const list = audience === 'resident'
-    ? listAnnouncementsForResident(filters)
-    : listAnnouncements(filters);
-
-  return res.json(list);
-});
-
-app.patch('/announcements/:id', requireAdminOrSU, (req, res) => {
-  const id = Number(req.params.id);
-  if (Number.isNaN(id)) {
-    return res.status(400).json({ error: 'Invalid announcement id.' });
+  if (role === "ADMIN" || role === "SU") {
+    return res.json(listAnnouncements());
   }
 
-  const updated = updateAnnouncement(id, req.body);
-  if (!updated) {
-    return res.status(404).json({ error: 'Announcement not found.' });
-  }
+  // Resident view
+  const phase = req.headers["x-phase"];
+  const block = req.headers["x-block"];
 
-  return res.json(updated);
+  return res.json(
+    listAnnouncementsForResident({
+      phase,
+      block
+    })
+  );
 });
 
-const port = process.env.PORT || 3000;
+// ─────────────────────────────────────────────
+// PATCH /announcements/:id  (Admin/SU only)
+// ─────────────────────────────────────────────
+app.patch("/announcements/:id", requireAdmin, (req, res) => {
+  try {
+    const updated = updateAnnouncement(req.params.id, req.body);
+    return res.json(updated);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// Start server
+// ─────────────────────────────────────────────
+const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Announcements API listening on port ${port}`);
+  console.log(`Announcements API running on port ${port}`);
 });
