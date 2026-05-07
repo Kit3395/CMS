@@ -1,10 +1,13 @@
 {
-  "name": "cms-security-testing-examples",
+  "name": "casa-mira-api",
   "version": "1.0.0",
-  "private": true,
+  "main": "src/app.js",
   "type": "commonjs",
   "scripts": {
-    "test": "jest --runInBand"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest --runInBand",
+    "check": "node --check src/app.js"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -13,6 +16,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "supertest": "^7.0.0"
+    "supertest": "^6.4.2",
+    "nodemon": "^3.1.0"
   }
 }
