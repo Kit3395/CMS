@@ -1,61 +1,44 @@
-import { useMemo, useState } from 'react';
-import { ResidentDashboard } from './components/ResidentDashboard';
-import { InvoicePaymentPage } from './components/InvoicePaymentPage';
-import { PaymentConfirmation } from './components/PaymentConfirmation';
-import './styles.css';
-
-const demoInvoice = {
-  id: 'INV-2026-1048',
-  dueDate: '2026-05-18',
-  property: 'Casa Mira Residences',
-  lineItems: [
-    { label: 'May Rent', amount: 1800 },
-    { label: 'Utilities', amount: 145.62 },
-    { label: 'Maintenance Fee', amount: 40 },
-  ],
-};
-
-function getTotal(lineItems) {
-  return lineItems.reduce((total, item) => total + item.amount, 0);
-}
+import { useState } from "react";
+import ResidentDashboard from "./components/ResidentDashboard";
+import InvoicePaymentPage from "./components/InvoicePaymentPage";
+import PaymentConfirmation from "./components/PaymentConfirmation";
+import "./styles.css";
 
 export default function App() {
-  const [step, setStep] = useState('dashboard');
-  const [paymentId, setPaymentId] = useState('');
-  const total = useMemo(() => getTotal(demoInvoice.lineItems), []);
+  const [screen, setScreen] = useState("dashboard");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [paymentResult, setPaymentResult] = useState(null);
 
-  const handlePayNow = () => setStep('payment');
-
-  const handlePaymentSuccess = (id) => {
-    setPaymentId(id);
-    setStep('confirmation');
+  const handlePayNow = (invoice) => {
+    setSelectedInvoice(invoice);
+    setScreen("payment");
   };
 
-  const handleBackToDashboard = () => setStep('dashboard');
+  const handlePaymentSuccess = (result) => {
+    setPaymentResult(result);
+    setScreen("confirmation");
+  };
 
   return (
-    <main className="app-shell">
-      {step === 'dashboard' && (
-        <ResidentDashboard invoice={demoInvoice} total={total} onPayNow={handlePayNow} />
+    <div className="app-container">
+      {screen === "dashboard" && (
+        <ResidentDashboard onPayNow={handlePayNow} />
       )}
 
-      {step === 'payment' && (
+      {screen === "payment" && (
         <InvoicePaymentPage
-          invoice={demoInvoice}
-          total={total}
-          onCancel={handleBackToDashboard}
-          onPaymentSuccess={handlePaymentSuccess}
+          invoice={selectedInvoice}
+          onSuccess={handlePaymentSuccess}
+          onBack={() => setScreen("dashboard")}
         />
       )}
 
-      {step === 'confirmation' && (
+      {screen === "confirmation" && (
         <PaymentConfirmation
-          invoice={demoInvoice}
-          total={total}
-          paymentId={paymentId}
-          onReturn={handleBackToDashboard}
+          result={paymentResult}
+          onReturnHome={() => setScreen("dashboard")}
         />
       )}
-    </main>
+    </div>
   );
 }
