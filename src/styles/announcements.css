@@ -1,0 +1,33 @@
+:root {
+  --ann-teal: #0f9d9a;
+  --ann-gold: #d7a83d;
+}
+
+.ann-page, .ann-widget { padding: 1rem; }
+.ann-filters, .ann-form { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 1rem; }
+.ann-filters input, .ann-filters select, .ann-form input, .ann-form select, .ann-form textarea {
+  border: 1px solid #d4d4d4; border-radius: 10px; padding: 0.6rem 0.75rem;
+}
+.ann-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.ann-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e8ebeb;
+  box-shadow: 0 8px 24px rgba(15, 157, 154, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  padding: 1rem;
+}
+.ann-card-header, .ann-card-footer { display: flex; justify-content: space-between; gap: .5rem; align-items: center; }
+.ann-category-pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  color: var(--ann-teal); background: rgba(15, 157, 154, 0.1); border-radius: 999px; padding: .2rem .65rem;
+}
+.ann-icon { width: 16px; height: 16px; }
+.ann-status { font-size: .75rem; text-transform: capitalize; border-radius: 999px; padding: .2rem .55rem; }
+.ann-status-active { background: rgba(15,157,154,.15); color: var(--ann-teal); }
+.ann-status-scheduled { background: rgba(215,168,61,.18); color: #8f6918; }
+.ann-status-draft, .ann-status-expired { background: #efefef; color: #666; }
+.ann-form button {
+  background: linear-gradient(120deg, var(--ann-teal), #16b6b2);
+  color: white; border: none; border-radius: 10px; padding: .65rem 1rem; cursor: pointer;
+}
+.ann-page h1, .ann-widget h2 { border-left: 4px solid var(--ann-gold); padding-left: .6rem; }

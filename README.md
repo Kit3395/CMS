@@ -1,13 +1,43 @@
-# React Design System Example
+# CASA MIRA React Design System
 
-This repository includes a lightweight design system setup for a React app.
+This package provides the foundational visual system for the CASA MIRA web app, including:
 
-## What's included
-- `src/theme.js`: shared theme tokens for colors, spacing, typography, radii, and shadows.
-- `src/components/DesignSystem.jsx`: reusable components (`Button`, `Card`, `Badge`, `Table`, `Modal`, `Alert`, `Icon`) and a sample page.
-- `src/design-system.css`: styles for gradients, subtle depth, and flat outline-only icon treatment.
-- `src/App.jsx`: sample usage.
+- Centralized theme tokens (`src/theme.js`)
+- Global CSS variables and component surface styles (`src/design-system.css`)
+- Reusable UI primitives (`src/components/DesignSystem.jsx`)
+- A sample page demonstrating all components
 
-## Notes
-- Icons are stroke-only (`fill: none`) with a consistent 1.8 stroke width via `.ds-icon`.
-- Cards and containers use gentle gradients and shadows for a professional 3D feel.
+## Contents
+
+### 🎨 Theme Tokens (`src/theme.js`)
+Defines the color palette, spacing scale, radii, shadows, and typography tokens used across the app.
+
+### 🧩 Design System Components (`src/components/DesignSystem.jsx`)
+Exports the following primitives:
+
+- `Icon`
+- `Button`
+- `Card`
+- `Badge`
+- `Table`
+- `Modal`
+- `Alert`
+
+All icons use outline‑only strokes via the `.ds-icon` class.
+
+### 💅 Global Styles (`src/design-system.css`)
+Includes:
+
+- CSS variables for colors, spacing, radii, shadows
+- Gradient backgrounds
+- Soft 3D container shadows
+- `.ds-icon` rules enforcing `fill: none` and `stroke-width: 1.8`
+
+### 📄 Sample Page (`src/App.jsx`)
+Renders a demo page showing all components in use.
+
+## Running the App
+
+```bash
+npm install
+npm run dev

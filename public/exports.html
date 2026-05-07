@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Exports</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+      form { display: grid; gap: 0.75rem; margin-bottom: 2rem; }
+      label { display: grid; gap: 0.35rem; }
+      input, select, button { padding: 0.5rem; font-size: 1rem; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+      #message { margin: 1rem 0; }
+    </style>
+  </head>
+  <body>
+    <h1>Exports</h1>
+    <form id="export-form">
+      <label>
+        Export type
+        <select id="type" required>
+          <option value="residents">Residents</option>
+          <option value="payments">Payments</option>
+          <option value="invoices">Invoices</option>
+        </select>
+      </label>
+      <label>
+        From date
+        <input id="fromDate" type="date" />
+      </label>
+      <label>
+        To date
+        <input id="toDate" type="date" />
+      </label>
+      <label>
+        Status
+        <input id="status" placeholder="paid, pending, active..." />
+      </label>
+      <button type="submit">Trigger export</button>
+    </form>
+
+    <p id="message"></p>
+
+    <h2>Past exports</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Created</th>
+          <th>Status</th>
+          <th>Filters</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody id="export-rows"></tbody>
+    </table>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
