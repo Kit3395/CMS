@@ -1,0 +1,194 @@
+// ------------------------------------------------------
+//  Datasource & Generator
+// ------------------------------------------------------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------
+//  Enums
+// ------------------------------------------------------
+enum Role {
+  SU
+  ADMIN
+  RESIDENT
+}
+
+enum BillingStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
+enum ImportStatus {
+  SUCCESS
+  FAILED
+}
+
+enum ExportType {
+  RESIDENTS
+  PAYMENTS
+  ANNOUNCEMENTS
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+}
+
+enum AutofixType {
+  FIX_BALANCES
+  FIX_DUPLICATES
+  FIX_UNITS
+}
+
+enum AutofixStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// ------------------------------------------------------
+//  Core Authentication
+// ------------------------------------------------------
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  announcements Announcement[]
+  receipts      Receipt[]
+  exportLogs    ExportLog[]
+  auditLogs     AuditLog[]
+}
+
+// ------------------------------------------------------
+//  Residents & Units
+// ------------------------------------------------------
+model Resident {
+  id         String        @id @default(cuid())
+  firstName  String
+  lastName   String
+  email      String?
+  phone      String?
+  unitNumber String?
+  address    String?
+  balance    Float         @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  // Relations
+  billingItems BillingItem[]
+  payments     Payment[]
+  disputes     Dispute[]
+}
+
+model Unit {
+  id         String   @id @default(cuid())
+  unitNumber String
+  building   String?
+  residentId String?
+
+  resident   Resident? @relation(fields: [residentId], references: [id])
+}
+
+// ------------------------------------------------------
+//  Billing, Payments, Receipts
+// ------------------------------------------------------
+model BillingItem {
+  id         String        @id @default(cuid())
+  residentId String
+  description String
+  amount     Float
+  dueDate    DateTime
+  status     BillingStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+
+  resident   Resident      @relation(fields: [residentId], references: [id])
+}
+
+model Payment {
+  id          String         @id @default(cuid())
+  residentId  String
+  amount      Float
+  method      PaymentMethod
+  referenceNumber String?
+  createdAt   DateTime       @default(now())
+
+  resident    Resident       @relation(fields: [residentId], references: [id])
+  receipt     Receipt?
+}
+
+model Receipt {
+  id         String   @id @default(cuid())
+  paymentId  String
+  issuedBy   String
+  createdAt  DateTime @default(now())
+
+  payment    Payment  @relation(fields: [paymentId], references: [id])
+  user       User     @relation(fields: [issuedBy], references: [id])
+}
+
+// ------------------------------------------------------
+//  Announcements
+// ------------------------------------------------------
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  body       String
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [createdBy], references: [id])
+}
+
+// ------------------------------------------------------
+//  Disputes
+// ------------------------------------------------------
+model Dispute {
+  id          String        @id @default(cuid())
+  residentId  String
+  subject     String
+  description String
+  status      DisputeStatus @default(OPEN)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  resident    Resident      @relation(fields: [residentId], references: [id])
+}
+
+// ------------------------------------------------------
+//  Import / Export Logs
+// ------------------------------------------------------
+model ImportLog {
+  id            String        @id @default(cuid())
+  fileName      String
+  status        ImportStatus
+  totalRows     Int
+  processedRows Int
+  createdAt     DateTime      @default(now())
+}
+
+model ExportLog {
+  id         String      @id @default(cuid())
+  type       ExportType
+  createdBy  String
+  createdAt  DateTime    @
