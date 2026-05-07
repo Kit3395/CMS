@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CASA MIRA Admin · Import Residents</title>
+    <style>
+      :root {
+        --brand-ink: #17414f;
+        --brand-accent: #2a8f7b;
+        --brand-bg: #f3f8f7;
+        --border: #d5e3e0;
+        --text: #16313a;
+        --muted: #5b737a;
+        --pending: #d2a533;
+        --processing: #2a74d6;
+        --completed: #1f8f56;
+        --failed: #c43e3e;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        color: var(--text);
+        background: linear-gradient(180deg, #f8fbfb, #eef6f5);
+      }
+      .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+      .header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1.25rem;
+      }
+      .brand { display: flex; align-items: center; gap: .75rem; color: var(--brand-ink); }
+      .brand h1 { font-size: 1.1rem; margin: 0; letter-spacing: .06em; }
+      .brand small { display:block; color: var(--muted); letter-spacing: .03em; }
+      .card {
+        background: white; border: 1px solid var(--border); border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(11, 43, 53, .07);
+        padding: 1.25rem;
+      }
+      .title { margin: 0 0 .4rem 0; color: var(--brand-ink); }
+      .subtitle { margin: 0 0 1rem; color: var(--muted); }
+      .actions { display:flex; gap:.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+      button, .upload-label {
+        border:1px solid var(--border); background:#fff; color:var(--brand-ink);
+        border-radius: 10px; padding:.65rem .9rem; cursor:pointer; font-weight:600;
+        display:inline-flex; align-items:center; gap:.5rem;
+      }
+      button.primary { background: var(--brand-accent); color:white; border-color:transparent; }
+      button:hover, .upload-label:hover { filter: brightness(.98); }
+      input[type="file"] { display:none; }
+      .status-grid {
+        display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:.75rem;
+        margin-top: .5rem;
+      }
+      .status-item {
+        border:1px solid var(--border); border-radius:10px; padding:.75rem;
+      }
+      .label { color:var(--muted); font-size:.82rem; margin-bottom:.2rem; }
+      .value { font-weight:700; display:flex; align-items:center; gap:.4rem; }
+      .pill { padding:.15rem .5rem; border-radius:999px; font-size:.8rem; border:1px solid; }
+      .pending { color:var(--pending); border-color: color-mix(in srgb, var(--pending), #fff 50%); }
+      .processing { color:var(--processing); border-color: color-mix(in srgb, var(--processing), #fff 50%); }
+      .completed { color:var(--completed); border-color: color-mix(in srgb, var(--completed), #fff 50%); }
+      .failed { color:var(--failed); border-color: color-mix(in srgb, var(--failed), #fff 50%); }
+      .summary {
+        margin-top:1rem; border-top:1px dashed var(--border); padding-top:.85rem;
+      }
+      a.inline-link { color: var(--processing); font-weight:600; text-decoration:none; }
+      a.inline-link:hover { text-decoration:underline; }
+      .icon { width: 18px; height:18px; stroke: currentColor; stroke-width: 1.8; fill: none; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="header">
+        <div class="brand">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20V7l7-4 7 4v13M9 20v-5h6v5"/></svg>
+          <div>
+            <h1>CASA MIRA</h1>
+            <small>Admin Console</small>
+          </div>
+        </div>
+      </div>
+
+      <section class="card">
+        <h2 class="title">Import Residents</h2>
+        <p class="subtitle">Upload a resident CSV to queue a background import job.</p>
+
+        <div class="actions">
+          <button id="downloadTemplateBtn" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+            Download Template CSV
+          </button>
+
+          <label class="upload-label" for="residentFile">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V6M8 10l4-4 4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            Upload Resident CSV
+          </label>
+          <input id="residentFile" type="file" accept=".csv" />
+
+          <button id="simulateBtn" class="primary" type="button">Simulate Job Progress</button>
+        </div>
+
+        <div class="status-grid">
+          <div class="status-item">
+            <div class="label">File</div>
+            <div id="fileName" class="value">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7zM14 3v5h5"/></svg>
+              No file selected
+            </div>
+          </div>
+
+          <div class="status-item">
+            <div class="label">Job Status</div>
+            <div class="value"><span id="jobStatus" class="pill pending">pending</span></div>
+          </div>
+
+          <div class="status-item">
+            <div class="label">Rows Processed</div>
+            <div id="rowsProcessed" class="value">0 / 0</div>
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="label">Summary</div>
+          <div id="summaryText" class="value">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18.3A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            Waiting for upload.
+          </div>
+          <p style="margin:.5rem 0 0; color:var(--muted)">
+            Error file: <a id="errorLink" class="inline-link" href="#" download="resident-import-errors.csv">Download error CSV</a>
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const template = `first_name,last_name,unit,phone,email,move_in_date\nAda,Lovelace,A-101,555-0101,ada@example.com,2026-04-01`;
+      const fileInput = document.getElementById('residentFile');
+      const fileName = document.getElementById('fileName');
+      const statusEl = document.getElementById('jobStatus');
+      const rowsProcessed = document.getElementById('rowsProcessed');
+      const summaryText = document.getElementById('summaryText');
+      const errorLink = document.getElementById('errorLink');
+
+      document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
+        const blob = new Blob([template], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'resident-import-template.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        fileName.textContent = file.name;
+        setStatus('pending');
+        rowsProcessed.textContent = '0 / 0';
+        summaryText.textContent = 'File uploaded. Job queued and waiting to start.';
+      });
+
+      document.getElementById('simulateBtn').addEventListener('click', async () => {
+        if (!fileInput.files?.length) {
+          summaryText.textContent = 'Please upload a CSV first.';
+          setStatus('failed');
+          return;
+        }
+
+        setStatus('processing');
+        rowsProcessed.textContent = '18 / 80';
+        summaryText.textContent = 'Import in progress...';
+
+        await new Promise((r) => setTimeout(r, 1000));
+
+        const failedRows = 2;
+        const total = 80;
+        rowsProcessed.textContent = `${total} / ${total}`;
+
+        if (failedRows > 0) {
+          setStatus('completed');
+          summaryText.textContent = `Completed with ${failedRows} row errors. Review error CSV.`;
+
+          const errorCsv = 'row,error\n12,Invalid unit value\n46,Missing last_name';
+          const blob = new Blob([errorCsv], { type: 'text/csv' });
+          errorLink.href = URL.createObjectURL(blob);
+        } else {
+          setStatus('completed');
+          summaryText.textContent = 'Completed successfully with no validation errors.';
+          errorLink.removeAttribute('href');
+        }
+      });
+
+      function setStatus(status) {
+        statusEl.className = `pill ${status}`;
+        statusEl.textContent = status;
+      }
+    </script>
+  </body>
+</html>
