@@ -1,71 +1,37 @@
-# CMS Backend Auth + RBAC
+# CASA MIRA API — Authentication & RBAC
 
-## Folder Structure Updates
+This module provides secure JWT authentication, password hashing, and role‑based access control for the CASA MIRA backend.
 
-```
-.
-├── src
-│   ├── app.js
-│   ├── server.js
-│   ├── config.js
-│   ├── auth
-│   │   └── token.js
-│   ├── data
-│   │   └── users.js
-│   ├── middleware
-│   │   ├── authenticateJwt.js
-│   │   └── requireRole.js
-│   ├── routes
-│   │   ├── authRoutes.js
-│   │   └── adminRoutes.js
-│   └── utils
-│       └── httpError.js
-├── tests
-│   └── auth.test.js
-└── package.json
-```
+## Features
 
-## Auth Endpoints
+### 🔐 Authentication
+- `POST /auth/login` — verifies email/password and issues JWT
+- `GET /auth/me` — returns the authenticated user
 
-### `POST /auth/login`
-- Request body:
-```json
-{ "email": "admin@cms.local", "password": "admin123456" }
-```
-- Returns JWT with role claim (`SU`, `ADMIN`, `RESIDENT`) and user payload.
+### 🛡️ Role-Based Access Control
+Roles:
+- `SU` — Superuser
+- `ADMIN`
+- `RESIDENT`
 
-### `GET /auth/me`
-- Requires `Authorization: Bearer <token>`.
-- Returns current user derived from JWT subject (`sub`).
+Protected example route:
+- `GET /admin/dashboard` — requires `ADMIN` or `SU`
 
-## Middleware
-- `authenticateJwt`: verifies JWT and attaches payload to `req.user`.
-- `requireRole(["ADMIN", "SU"])`: denies any non-listed role.
+### 🔑 JWT
+Tokens embed:
+- `sub` — user ID
+- `email`
+- `role`
 
-## Example Usage
+Configured via `.env`:
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
 
+### 🔒 Password Hashing
+Uses `bcryptjs` with 12 rounds.
+
+### 🧪 Tests
+Run:
 ```bash
-# 1) Login
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@cms.local","password":"admin123456"}'
-
-# 2) Check current user
-curl http://localhost:3000/auth/me \
-  -H "Authorization: Bearer <ACCESS_TOKEN>"
-
-# 3) Access admin-only route
-curl http://localhost:3000/admin/dashboard \
-  -H "Authorization: Bearer <ACCESS_TOKEN>"
-```
-
-## Test Examples
-
-```bash
+npm install
 npm test
-```
-Covers:
-- successful login
-- `/auth/me` retrieval
-- RBAC denial for `RESIDENT`
-- RBAC allow for `SU`

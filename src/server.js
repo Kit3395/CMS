@@ -1,7 +1,6 @@
-const app = require('./app');
-
-const port = process.env.PORT || 3000;
+const app = require("./app");
+const { port } = require("./config");
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`CASA MIRA API running on port ${port}`);
 });
