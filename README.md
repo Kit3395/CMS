@@ -1,28 +1,43 @@
-# Stripe Payment Integration — Casa Mira API
+# CASA MIRA React Design System
 
-This module adds invoice payment support using Stripe PaymentIntents and webhook‑driven post‑payment processing.
+This package provides the foundational visual system for the CASA MIRA web app, including:
 
-## Features
+- Centralized theme tokens (`src/theme.js`)
+- Global CSS variables and component surface styles (`src/design-system.css`)
+- Reusable UI primitives (`src/components/DesignSystem.jsx`)
+- A sample page demonstrating all components
 
-- `POST /payments/create-intent`
-  - Validates `invoice_id`
-  - Creates a Stripe PaymentIntent
-  - Returns `client_secret` and `payment_intent_id`
+## Contents
 
-- `POST /payments/webhook`
-  - Verifies Stripe webhook signatures
-  - Handles:
-    - `payment_intent.succeeded`
-    - `payment_intent.payment_failed`
-  - On success:
-    - Creates a `Payment` record
-    - Marks the `Invoice` as `paid`
-    - Creates a `Receipt`
-    - Writes an `AuditLog`
+### 🎨 Theme Tokens (`src/theme.js`)
+Defines the color palette, spacing scale, radii, shadows, and typography tokens used across the app.
 
-## Environment Variables
+### 🧩 Design System Components (`src/components/DesignSystem.jsx`)
+Exports the following primitives:
 
-Copy the example file:
+- `Icon`
+- `Button`
+- `Card`
+- `Badge`
+- `Table`
+- `Modal`
+- `Alert`
+
+All icons use outline‑only strokes via the `.ds-icon` class.
+
+### 💅 Global Styles (`src/design-system.css`)
+Includes:
+
+- CSS variables for colors, spacing, radii, shadows
+- Gradient backgrounds
+- Soft 3D container shadows
+- `.ds-icon` rules enforcing `fill: none` and `stroke-width: 1.8`
+
+### 📄 Sample Page (`src/App.jsx`)
+Renders a demo page showing all components in use.
+
+## Running the App
 
 ```bash
-cp .env.example .env
+npm install
+npm run dev

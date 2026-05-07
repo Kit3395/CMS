@@ -1,0 +1,72 @@
+export const theme = {
+  colors: {
+    primary: {
+      50: '#ecfeff',
+      100: '#cffafe',
+      500: '#14b8a6',
+      600: '#0d9488',
+      700: '#0f766e',
+    },
+    accent: {
+      100: '#fef9c3',
+      300: '#fde047',
+      500: '#eab308',
+      600: '#ca8a04',
+    },
+    gray: {
+      50: '#f8fafc',
+      100: '#f1f5f9',
+      200: '#e2e8f0',
+      400: '#94a3b8',
+      600: '#475569',
+      700: '#334155',
+      900: '#0f172a',
+    },
+    success: '#16a34a',
+    warning: '#f59e0b',
+    danger: '#dc2626',
+    info: '#0284c7',
+    white: '#ffffff',
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '24px',
+    '2xl': '32px',
+    '3xl': '48px',
+  },
+  radii: {
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    pill: '999px',
+  },
+  shadows: {
+    sm: '0 2px 8px rgba(15, 23, 42, 0.08)',
+    md: '0 8px 24px rgba(15, 23, 42, 0.12)',
+    lg: '0 16px 36px rgba(15, 23, 42, 0.14)',
+  },
+  typography: {
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    sizes: {
+      xs: '12px',
+      sm: '14px',
+      md: '16px',
+      lg: '20px',
+      xl: '28px',
+    },
+    weights: {
+      regular: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+    },
+    lineHeights: {
+      tight: 1.2,
+      normal: 1.5,
+      relaxed: 1.7,
+    },
+  },
+};
