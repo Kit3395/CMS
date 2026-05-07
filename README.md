@@ -1,11 +1,10 @@
-# CMS Backend
+# CMS Backend (Casa Mira API)
 
-Implements super-user (SU) admin management routes with audit logging.
+This backend uses centralized environment‑based configuration and Prisma for database access.
 
-## Endpoints
-- `POST /admins`
-- `GET /admins`
-- `PATCH /admins/{id}`
-- `DELETE /admins/{id}`
+## Environment Variables
 
-All endpoints require `X-User-Role: SU`.
+Copy the example file:
+
+```bash
+cp .env.example .env
