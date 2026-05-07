@@ -1,145 +1,113 @@
-import http from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { URL } from 'node:url';
-import crypto from 'node:crypto';
+const express = require("express");
+const crypto = require("crypto");
+const dotenv = require("dotenv");
 
-const port = process.env.PORT || 3000;
-const validTypes = new Set(['residents', 'payments', 'invoices']);
-const exportsStore = [];
+dotenv.config();
 
-function json(res, status, payload) {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(payload));
-}
+const app = express();
+app.use(express.json());
 
-function badRequest(res, message) {
-  json(res, 400, { error: message });
-}
+// In-memory export store
+const exportStore = [];
 
-function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => {
-      data += chunk;
-      if (data.length > 1e6) {
-        reject(new Error('Payload too large'));
-      }
-    });
-    req.on('end', () => {
-      if (!data) return resolve({});
-      try {
-        resolve(JSON.parse(data));
-      } catch {
-        reject(new Error('Invalid JSON body'));
-      }
-    });
-    req.on('error', reject);
-  });
-}
-
-function createCsvContent(type, filters) {
-  const filterPairs = Object.entries(filters || {});
-  const header = 'type,generatedAt,filterKey,filterValue';
-  if (filterPairs.length === 0) {
-    return `${header}\n${type},${new Date().toISOString()},,`;
+// Role check helper
+function requireAdmin(req, res, next) {
+  const role = req.headers["x-role"];
+  if (role !== "ADMIN" && role !== "SU") {
+    return res.status(403).json({ error: "Admin or SU role required" });
   }
-  const rows = filterPairs.map(([key, value]) => `${type},${new Date().toISOString()},${key},${String(value)}`);
-  return `${header}\n${rows.join('\n')}`;
+  next();
 }
 
-function makeExportJob(type, filters, host) {
+// CSV generator helper
+function toCSV(rows) {
+  if (!rows.length) return "";
+  const headers = Object.keys(rows[0]);
+  const lines = [
+    headers.join(","),
+    ...rows.map((r) => headers.map((h) => r[h]).join(","))
+  ];
+  return lines.join("\n");
+}
+
+// Fake data generator for demo purposes
+function generateData(type, filters) {
+  if (type === "residents") {
+    return [
+      { id: 1, name: "Alice", phase: "1", block: "A" },
+      { id: 2, name: "Bob", phase: "2", block: "B" }
+    ];
+  }
+  if (type === "payments") {
+    return [
+      { id: 10, invoice: "INV-001", amount: 1200, status: "paid" },
+      { id: 11, invoice: "INV-002", amount: 800, status: "pending" }
+    ];
+  }
+  if (type === "invoices") {
+    return [
+      { id: 100, resident: "Alice", total: 1200, due: "2026-05-01" },
+      { id: 101, resident: "Bob", total: 800, due: "2026-06-01" }
+    ];
+  }
+  return [];
+}
+
+// ─────────────────────────────────────────────
+// POST /exports/:type  (Admin/SU only)
+// ─────────────────────────────────────────────
+app.post("/exports/:type", requireAdmin, (req, res) => {
+  const { type } = req.params;
+  const filters = req.body ?? {};
+
   const id = crypto.randomUUID();
-  const createdAt = new Date().toISOString();
   const fileName = `${type}-export-${id}.csv`;
-  const csv = createCsvContent(type, filters);
+
+  const rows = generateData(type, filters);
+  const csv = toCSV(rows);
+
   const job = {
     id,
     type,
     filters,
-    status: 'completed',
-    createdAt,
+    status: "completed",
+    createdAt: new Date().toISOString(),
     fileName,
     csv,
-    downloadUrl: `${host}/exports/${id}/download`
+    downloadUrl: `/exports/${id}/download`
   };
-  exportsStore.unshift(job);
-  return job;
-}
 
-async function serveFile(res, path, type = 'text/html') {
-  try {
-    const content = await readFile(path);
-    res.writeHead(200, { 'Content-Type': type });
-    res.end(content);
-  } catch {
-    res.writeHead(404);
-    res.end('Not Found');
-  }
-}
+  exportStore.push(job);
 
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const host = `http://${req.headers.host}`;
-
-  if (req.method === 'GET' && url.pathname === '/') {
-    return serveFile(res, 'public/exports.html');
-  }
-
-  if (req.method === 'POST' && url.pathname.startsWith('/exports/')) {
-    const type = url.pathname.split('/')[2];
-    if (!validTypes.has(type)) {
-      return badRequest(res, 'Invalid export type. Use residents, payments, or invoices.');
-    }
-
-    try {
-      const body = await parseBody(req);
-      const filters = body.filters && typeof body.filters === 'object' ? body.filters : {};
-      const job = makeExportJob(type, filters, host);
-      return json(res, 201, {
-        id: job.id,
-        type: job.type,
-        status: job.status,
-        createdAt: job.createdAt,
-        filters: job.filters,
-        downloadUrl: job.downloadUrl
-      });
-    } catch (error) {
-      return badRequest(res, error.message);
-    }
-  }
-
-  if (req.method === 'GET' && url.pathname === '/exports') {
-    return json(
-      res,
-      200,
-      exportsStore.map(({ csv, ...rest }) => rest)
-    );
-  }
-
-  if (req.method === 'GET' && url.pathname.startsWith('/exports/') && url.pathname.endsWith('/download')) {
-    const id = url.pathname.split('/')[2];
-    const job = exportsStore.find((item) => item.id === id);
-    if (!job) {
-      res.writeHead(404);
-      res.end('Export not found');
-      return;
-    }
-    res.writeHead(200, {
-      'Content-Type': 'text/csv',
-      'Content-Disposition': `attachment; filename="${job.fileName}"`
-    });
-    res.end(job.csv);
-    return;
-  }
-
-  if (req.method === 'GET' && url.pathname === '/app.js') {
-    return serveFile(res, 'public/app.js', 'application/javascript');
-  }
-
-  res.writeHead(404);
-  res.end('Not Found');
+  return res.status(201).json(job);
 });
 
-server.listen(port, () => {
-  console.log(`Server listening on http://localhost:${port}`);
+// ─────────────────────────────────────────────
+// GET /exports  (Admin/SU only)
+// ─────────────────────────────────────────────
+app.get("/exports", requireAdmin, (req, res) => {
+  return res.json(exportStore);
+});
+
+// ─────────────────────────────────────────────
+// GET /exports/:id/download  (Admin/SU only)
+// ─────────────────────────────────────────────
+app.get("/exports/:id/download", requireAdmin, (req, res) => {
+  const job = exportStore.find((j) => j.id === req.params.id);
+
+  if (!job) {
+    return res.status(404).json({ error: "Export job not found" });
+  }
+
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="${job.fileName}"`);
+  return res.send(job.csv);
+});
+
+// ─────────────────────────────────────────────
+// Start server
+// ─────────────────────────────────────────────
+const port = Number(process.env.PORT ?? 3000);
+app.listen(port, () => {
+  console.log(`Exports API running on port ${port}`);
 });
