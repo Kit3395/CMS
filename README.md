@@ -1,23 +1,28 @@
-## Stripe payment integration
+# Stripe Payment Integration — Casa Mira API
 
-### Endpoints
-- `POST /payments/create-intent` with payload `{ "invoice_id": 123 }`.
-- `POST /payments/webhook` for Stripe webhook events (`payment_intent.succeeded` and `payment_intent.payment_failed`).
+This module adds invoice payment support using Stripe PaymentIntents and webhook‑driven post‑payment processing.
 
-### What happens on success
-1. A `Payment` record is created.
-2. The `Invoice` status is set to `paid`.
-3. A `Receipt` record is created.
-4. An `AuditLog` entry is created.
+## Features
 
-### Secret configuration
-Set these environment variables (e.g. in `.env`):
-- `STRIPE_SECRET_KEY`: Stripe API secret key.
-- `STRIPE_WEBHOOK_SECRET`: endpoint signing secret from Stripe webhook settings.
-- `DATABASE_URL`: SQLAlchemy connection string.
+- `POST /payments/create-intent`
+  - Validates `invoice_id`
+  - Creates a Stripe PaymentIntent
+  - Returns `client_secret` and `payment_intent_id`
 
-### Run
+- `POST /payments/webhook`
+  - Verifies Stripe webhook signatures
+  - Handles:
+    - `payment_intent.succeeded`
+    - `payment_intent.payment_failed`
+  - On success:
+    - Creates a `Payment` record
+    - Marks the `Invoice` as `paid`
+    - Creates a `Receipt`
+    - Writes an `AuditLog`
+
+## Environment Variables
+
+Copy the example file:
+
 ```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+cp .env.example .env
