@@ -1,16 +1,19 @@
-import express from 'express';
-import { config } from './config.js';
+import express from "express";
+import { config } from "./config.js";
 
 const app = express();
+app.use(express.json());
 
-app.get('/health', (_req, res) => {
+// Health check endpoint
+app.get("/health", (_req, res) => {
   res.json({
-    status: 'ok',
+    status: "ok",
     dbConfigured: Boolean(config.db.url),
-    jwtConfigured: Boolean(config.jwt.secret)
+    jwtConfigured: Boolean(config.jwt.secret),
+    jwtExpiresIn: config.jwt.expiresIn,
   });
 });
 
 app.listen(config.port, () => {
-  console.log(`Server is running on port ${config.port}`);
+  console.log(`Server running on port ${config.port}`);
 });
