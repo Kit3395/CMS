@@ -1,43 +1,37 @@
-# CASA MIRA React Design System
+# CASA MIRA API — Authentication & RBAC
 
-This package provides the foundational visual system for the CASA MIRA web app, including:
+This module provides secure JWT authentication, password hashing, and role‑based access control for the CASA MIRA backend.
 
-- Centralized theme tokens (`src/theme.js`)
-- Global CSS variables and component surface styles (`src/design-system.css`)
-- Reusable UI primitives (`src/components/DesignSystem.jsx`)
-- A sample page demonstrating all components
+## Features
 
-## Contents
+### 🔐 Authentication
+- `POST /auth/login` — verifies email/password and issues JWT
+- `GET /auth/me` — returns the authenticated user
 
-### 🎨 Theme Tokens (`src/theme.js`)
-Defines the color palette, spacing scale, radii, shadows, and typography tokens used across the app.
+### 🛡️ Role-Based Access Control
+Roles:
+- `SU` — Superuser
+- `ADMIN`
+- `RESIDENT`
 
-### 🧩 Design System Components (`src/components/DesignSystem.jsx`)
-Exports the following primitives:
+Protected example route:
+- `GET /admin/dashboard` — requires `ADMIN` or `SU`
 
-- `Icon`
-- `Button`
-- `Card`
-- `Badge`
-- `Table`
-- `Modal`
-- `Alert`
+### 🔑 JWT
+Tokens embed:
+- `sub` — user ID
+- `email`
+- `role`
 
-All icons use outline‑only strokes via the `.ds-icon` class.
+Configured via `.env`:
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
 
-### 💅 Global Styles (`src/design-system.css`)
-Includes:
+### 🔒 Password Hashing
+Uses `bcryptjs` with 12 rounds.
 
-- CSS variables for colors, spacing, radii, shadows
-- Gradient backgrounds
-- Soft 3D container shadows
-- `.ds-icon` rules enforcing `fill: none` and `stroke-width: 1.8`
-
-### 📄 Sample Page (`src/App.jsx`)
-Renders a demo page showing all components in use.
-
-## Running the App
-
+### 🧪 Tests
+Run:
 ```bash
 npm install
-npm run dev
+npm test
