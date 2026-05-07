@@ -1,0 +1,64 @@
+:root {
+  --brand-navy: #0a1628;
+  --brand-blue: #1a5cff;
+  --brand-teal: #0b8a8a;
+  --brand-muted: rgba(255, 255, 255, 0.45);
+  --brand-bg: #f5f7fa;
+}
+
+body {
+  margin: 0;
+  font-family: "Sora", sans-serif;
+  background: var(--brand-bg);
+  color: var(--brand-navy);
+}
+
+.app-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.button {
+  background: var(--brand-blue);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.button:hover {
+  background: #0f4ae0;
+}
+
+.status-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.invoice-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.payment-form {
+  margin-top: 20px;
+  display: grid;
+  gap: 14px;
+}

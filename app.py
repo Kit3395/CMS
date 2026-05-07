@@ -1,63 +1,30 @@
-from fastapi import FastAPI, UploadFile, File, Depends, Header, HTTPException
-from pydantic import BaseModel, EmailStr
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, func
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
 import csv
 import io
+import os
+from datetime import datetime
 
-DATABASE_URL = "sqlite:///./cms.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 
+from dotenv import load_dotenv
+from app.db import SessionLocal, engine, Base
+from app.models import (
+    ImportJob,
+    ImportJobError,
+    User,
+    Resident
+)
 
-class ImportJob(Base):
-    __tablename__ = "import_jobs"
-    id = Column(Integer, primary_key=True, index=True)
-    import_type = Column(String(50), nullable=False)
-    total_rows = Column(Integer, default=0, nullable=False)
-    success_rows = Column(Integer, default=0, nullable=False)
-    error_rows = Column(Integer, default=0, nullable=False)
-    status = Column(String(20), default="processing", nullable=False)
-    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+load_dotenv()
 
+app = FastAPI()
 
-class ImportJobError(Base):
-    __tablename__ = "import_job_errors"
-    id = Column(Integer, primary_key=True, index=True)
-    job_id = Column(Integer, ForeignKey("import_jobs.id"), nullable=False)
-    row_number = Column(Integer, nullable=False)
-    raw_row = Column(Text, nullable=False)
-    error_message = Column(Text, nullable=False)
-    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+# Create tables on startup
+Base.metadata.create_all(bind=engine)
 
 
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False, unique=True, index=True)
-
-
-class Resident(Base):
-    __tablename__ = "residents"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    phase = Column(String(50), nullable=False)
-    block = Column(String(50), nullable=False)
-    lot = Column(String(50), nullable=False)
-
-
-class ImportSummary(BaseModel):
-    job_id: int
-    total_rows: int
-    success_rows: int
-    error_rows: int
-
-
-app = FastAPI(title="CMS Import API")
-
-
+# Dependency: DB session
 def get_db():
     db = SessionLocal()
     try:
@@ -66,91 +33,101 @@ def get_db():
         db.close()
 
 
-def require_admin_or_su(x_role: str = Header(default="")):
-    if x_role not in {"Admin", "SU"}:
-        raise HTTPException(status_code=403, detail="Forbidden")
+# ─────────────────────────────────────────────
+# POST /imports/residents  (Admin/SU only)
+# ─────────────────────────────────────────────
+@app.post("/imports/residents")
+async def import_residents(
+    request: Request,
+    file: UploadFile = File(...),
+):
+    role = request.headers.get("x-role")
+    if role not in ("ADMIN", "SU"):
+        raise HTTPException(status_code=403, detail="Admin/SU role required")
 
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="File must be CSV")
 
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)
+    db: Session = next(get_db())
 
-
-@app.post("/imports/residents", response_model=ImportSummary, dependencies=[Depends(require_admin_or_su)])
-async def import_residents(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    if not file.filename.lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files are supported")
-
-    content = await file.read()
-    decoded = content.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(decoded))
-
-    required_fields = ["name", "email", "phase", "block", "lot"]
-    if not reader.fieldnames:
-        raise HTTPException(status_code=400, detail="CSV must include a header row")
-
-    missing_headers = [h for h in required_fields if h not in reader.fieldnames]
-    if missing_headers:
-        raise HTTPException(status_code=400, detail=f"Missing required headers: {', '.join(missing_headers)}")
-
-    job = ImportJob(import_type="residents", status="processing")
+    # Create import job
+    job = ImportJob(
+        started_at=datetime.utcnow(),
+        status="processing",
+        total_rows=0,
+        success_rows=0,
+        error_rows=0,
+    )
     db.add(job)
     db.commit()
     db.refresh(job)
 
-    total = success = errors = 0
+    content = await file.read()
+    text = content.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(text))
 
-    for row_index, row in enumerate(reader, start=2):
-        total += 1
-        values = {k: (row.get(k) or "").strip() for k in required_fields}
+    row_number = 1
 
-        missing = [k for k, v in values.items() if not v]
-        if missing:
-            errors += 1
-            db.add(ImportJobError(
-                job_id=job.id,
-                row_number=row_index,
-                raw_row=str(row),
-                error_message=f"Missing required fields: {', '.join(missing)}",
-            ))
-            continue
+    for row in reader:
+        job.total_rows += 1
 
         try:
-            EmailStr._validate(values["email"])
-        except Exception:
-            errors += 1
-            db.add(ImportJobError(
+            # Validate required fields
+            required = ["name", "email", "phase", "block", "lot"]
+            for field in required:
+                if not row.get(field):
+                    raise ValueError(f"Missing required field: {field}")
+
+            # Validate email format
+            if "@" not in row["email"]:
+                raise ValueError("Invalid email format")
+
+            # Duplicate email check
+            existing = db.query(User).filter(User.email == row["email"]).first()
+            if existing:
+                raise ValueError("Duplicate email")
+
+            # Create User + Resident
+            user = User(
+                name=row["name"],
+                email=row["email"],
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+            resident = Resident(
+                user_id=user.id,
+                phase=row["phase"],
+                block=row["block"],
+                lot=row["lot"],
+            )
+            db.add(resident)
+
+            job.success_rows += 1
+
+        except Exception as e:
+            # Log row-level error
+            err = ImportJobError(
                 job_id=job.id,
-                row_number=row_index,
+                row_number=row_number,
                 raw_row=str(row),
-                error_message="Invalid email format",
-            ))
-            continue
+                error_message=str(e),
+            )
+            db.add(err)
+            job.error_rows += 1
 
-        existing = db.query(User).filter(User.email == values["email"]).first()
-        if existing:
-            errors += 1
-            db.add(ImportJobError(
-                job_id=job.id,
-                row_number=row_index,
-                raw_row=str(row),
-                error_message="Email already exists",
-            ))
-            continue
+        row_number += 1
+        db.commit()
 
-        user = User(name=values["name"], email=values["email"])
-        db.add(user)
-        db.flush()
-
-        resident = Resident(user_id=user.id, phase=values["phase"], block=values["block"], lot=values["lot"])
-        db.add(resident)
-        success += 1
-
-    job.total_rows = total
-    job.success_rows = success
-    job.error_rows = errors
+    # Finalize job
     job.status = "completed"
-
+    job.completed_at = datetime.utcnow()
     db.commit()
 
-    return ImportSummary(job_id=job.id, total_rows=total, success_rows=success, error_rows=errors)
+    return {
+        "job_id": job.id,
+        "total_rows": job.total_rows,
+        "success_rows": job.success_rows,
+        "error_rows": job.error_rows,
+    }
